@@ -1,8 +1,6 @@
 var db = require('../config');
-var bcrypt = require('bcrypt-nodejs');
 var Promise = require('bluebird');
-
-
+var bcrypt = require('bcrypt-nodejs');
 
 var User = db.Model.extend({
   tableName: 'users',
@@ -10,18 +8,15 @@ var User = db.Model.extend({
 
   initialize: function() {
     this.on('creating', function(model, attrs, options) {
-      bcrypt.hash(model.attributes.password, null, null, (err, result) => {
-        if (err) {
-          throw(err);
-        } else {
-          model.set('password', result);
-        }
+      return new Promise ((resolve, reject) => {
+        bcrypt.hash(model.attributes.password, null, null, (err, hash) => {
+          if (err) { reject(err); }
+          model.set('password', hash);
+          resolve(hash);
+        });
       });
-      // console.log('HASHED', hashed);
-      // hashed.update(model.get('password'));
-    });
+    }, this);
   }
-
 });
 
 module.exports = User;
