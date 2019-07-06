@@ -29,7 +29,6 @@ app.use(session({
 
 function checkUser(req, res, next) {
   if (req.session.user) {
-    console.log('hi');
     next();
   } else {
     req.session.error = 'Access denied!';
