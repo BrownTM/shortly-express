@@ -2,7 +2,7 @@ var express = require('express');
 var util = require('./lib/utility');
 var partials = require('express-partials');
 var bodyParser = require('body-parser');
-
+var session = require('express-session');
 
 var db = require('./app/config');
 var Users = require('./app/collections/users');
@@ -21,13 +21,27 @@ app.use(bodyParser.json());
 // Parse forms (signup/login)
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
+app.use(session({
+  secret: 'shortly',
+  resave: false,
+  saveUninitialized: true
+}));
 
+function checkUser(req, res, next) {
+  if (req.session.user) {
+    console.log('hi');
+    next();
+  } else {
+    req.session.error = 'Access denied!';
+    res.redirect('/login');
+  }
+}
 
-app.get('/', function(req, res) {
+app.get('/', checkUser, function(req, res) {
   res.render('index');
 });
 
-app.get('/create', function(req, res) {
+app.get('/create', checkUser, function(req, res) {
   res.render('index');
 });
 
@@ -76,6 +90,9 @@ app.get('/login', function(req, res) {
 });
 
 app.post('/login', function(req, res) {
+  req.session.regenerate(function() {
+    req.session.user = req.body.username;
+  });
   new User({ username: req.body.username, password: req.body.password }).fetch().then(function(found) {
     if (found) {
       res.status(200).redirect('/');
@@ -90,6 +107,9 @@ app.get('/signup', function(req, res) {
 });
 
 app.post('/signup', function(req, res) {
+  req.session.regenerate(function() {
+    req.session.user = req.body.username;
+  });
   new User({ username: req.body.username, password: req.body.password }).fetch().then(function(found) {
     if (found) {
       res.status(200).send(found.attributes);
