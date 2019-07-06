@@ -44,7 +44,7 @@ app.get('/create', checkUser, function(req, res) {
   res.render('index');
 });
 
-app.get('/links', function(req, res) {
+app.get('/links', checkUser, function(req, res) {
   Links.reset().fetch().then(function(links) {
     res.status(200).send(links.models);
   });
@@ -92,12 +92,13 @@ app.post('/login', function(req, res) {
   req.session.regenerate(function() {
     req.session.user = req.body.username;
   });
-  new User({ username: req.body.username, password: req.body.password }).fetch().then(function(found) {
+  new User({ username: req.body.username }).fetch().then(function(found) {
     if (found) {
-      res.status(200).redirect('/');
-    } else {
-      res.redirect('/signup');
+      if (this.checkPassword(req.body.password, found.attributes.password, found.attributes.salt)) {
+        res.status(200).redirect('/');
+      }
     }
+    res.redirect('/login');
   });
 });
 
@@ -131,7 +132,7 @@ app.post('/signup', function(req, res) {
 // If the short-code doesn't exist, send the user to '/'
 /************************************************************/
 
-app.get('/*', function(req, res) {
+app.get('/*', checkUser, function(req, res) {
   new Link({ code: req.params[0] }).fetch().then(function(link) {
     if (!link) {
       res.redirect('/');

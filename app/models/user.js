@@ -8,14 +8,28 @@ var User = db.Model.extend({
 
   initialize: function() {
     this.on('creating', function(model, attrs, options) {
+      var salt = bcrypt.genSaltSync(10);
       return new Promise ((resolve, reject) => {
-        bcrypt.hash(model.attributes.password, null, null, (err, hash) => {
+        bcrypt.hash(model.attributes.password, salt, null, (err, hash) => {
           if (err) { reject(err); }
           model.set('password', hash);
+          model.set('salt', salt);
           resolve(hash);
         });
       });
     }, this);
+  },
+
+  checkPassword: function(password, hash, salt) {
+    var hashed = bcrypt.hashSync(password, salt);
+    return hashed === hash;
+    // , (err, result) => {
+    //   if (err) {
+    //     throw(err);
+    //   } else {
+    //     console.log('RESULT', result);
+    //     return result;
+    //   }
   }
 });
 
